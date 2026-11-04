@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>برنامج مدارس الأحد</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1e3a5f">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="المخدومين">
+<style>
+*{box-sizing:border-box;font-family:Tahoma,Arial,sans-serif}
+body{margin:0;background:#f3f5f9;color:#222;padding-bottom:50px}
+header{background:#1e3a5f;color:#fff;padding:10px 12px;display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:14px}
+header button{background:#c0392b;color:#fff;border:0;border-radius:6px;padding:6px 10px}
+nav{display:flex;background:#fff;border-bottom:2px solid #1e3a5f;overflow-x:auto}
+nav a{flex:1;text-align:center;padding:11px 8px;white-space:nowrap;cursor:pointer;font-size:14px}
+nav a.on{background:#1e3a5f;color:#fff}
+main{padding:12px;max-width:700px;margin:auto}
+input,select{width:100%;padding:10px;margin:4px 0;border:1px solid #bbb;border-radius:8px;font-size:15px;background:#fff}
+button{padding:10px 14px;border:0;border-radius:8px;font-size:15px;margin:4px 2px;background:#ddd}
+.pri{background:#1e3a5f;color:#fff;width:100%}.del{background:#c0392b;color:#fff}
+.card,.row{background:#fff;border-radius:10px;padding:10px;margin:8px 0;box-shadow:0 1px 3px #0002;line-height:1.8}
+.row{display:flex;justify-content:space-between;border-right:5px solid #c0392b;cursor:pointer}
+.row.ok{border-color:#27ae60;background:#eafaf1}
+.login{max-width:340px;margin:60px auto;padding:20px;text-align:center}
+footer{position:fixed;bottom:0;width:100%;background:#1e3a5f;color:#fff;text-align:center;padding:8px;font-size:13px}
+h3{margin:14px 0 4px;color:#1e3a5f}small{color:#666}
+.brand{text-align:center;background:#fff;padding:8px;border-bottom:1px solid #ddd;font-size:13px;line-height:1.8;color:#1e3a5f}.login .brand{border:0;background:none;margin-bottom:10px}
+@media print{header,nav,footer,button,select,input{display:none}}
+</style></head><body>
+<div id="app"></div>
+<footer>مدعوم من مينا منتصر 01227016225</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
+<script>
+// ===== ضع بيانات مشروع Firebase بتاعك هنا =====
+const CFG={apiKey:"AIzaSyB9k5K0kqMR0Fo5i_nP8TMeiekamaENWFA",authDomain:"sunday-school-235d2.firebaseapp.com",projectId:"sunday-school-235d2",storageBucket:"sunday-school-235d2.firebasestorage.app",messagingSenderId:"630758252466",appId:"1:630758252466:web:9f8d2383f0adb23390ceab"};
+// ==============================================
+firebase.initializeApp(CFG);const db=firebase.firestore();
+const ST=['حضانة','أولى','ثانية','ثالثة','رابعة','خامسة','سادسة'],CL=[];
+ST.forEach((s,i)=>i<2?CL.push(s):(CL.push(s+' - بنين'),CL.push(s+' - بنات')));
+let mo=new Date().toISOString().slice(0,7),U=null,D={m:[],a:{},l:{},u:[]},T='att',cur='',E=null,q='',P={};
+let BRD={a:'مطرانية الأقباط الأرثوذكس بطهطا وجهينة',b:'كاتدرائية الأنبا شنودة رئيس المتوحدين بساحل طهطا'};
+const BR=()=>`<div class=brand>${esc(BRD.a)}<br><b>${esc(BRD.b)}</b><br>برنامج مدارس الأحد</div>`;
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);let dt=today();
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const opts=(c,x)=>CL.map(k=>`<option ${k==c?'selected':''}>${k}</option>`).join('');
+const fl=c=>{const x=db.collection(c);return U&&U.role!='admin'?x.where('cls','==',U.cls):x};
+async function load(){const r=await Promise.all([fl('members').get(),fl('att').get(),fl('lessons').get(),db.collection('users').get()]);
+D.m=r[0].docs.map(d=>({id:d.id,...d.data()}));D.a={};r[1].docs.forEach(d=>D.a[d.id]=d.data());
+D.l={};r[2].docs.forEach(d=>D.l[d.id]=d.data());D.u=r[3].docs.map(d=>({id:d.id,...d.data()}))}
+async function init(){D.u=(await db.collection('users').get()).docs.map(d=>({id:d.id,...d.data()}));try{const b=await db.collection('settings').doc('brand').get();if(b.exists)BRD=b.data()}catch(e){}login();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})}
+function login(){U=null;$('app').innerHTML=!D.u.length?
+`<div class=login>${BR()}<h2>⛪ إعداد أول مرة</h2><p>سجّل أمين الخدمة</p><input id=n placeholder="الاسم"><input id=p placeholder="رقم سري" inputmode=numeric><button class=pri onclick="first()">ابدأ</button></div>`:
+`<div class=login>${BR()}<h2>⛪ متابعة المخدومين</h2><select id=n>${D.u.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select><input id=p type=password placeholder="الرقم السري" inputmode=numeric><button class=pri onclick="go()">دخول</button></div>`}
+async function first(){const n=$('n').value.trim(),p=$('p').value.trim();if(!n||!p)return alert('اكتب الاسم والرقم السري');
+await db.collection('users').add({name:n,pin:p,role:'admin',cls:''});await load();login()}
+async function go(){const u=D.u.find(x=>x.id==$('n').value);if(!u||u.pin!=$('p').value.trim())return alert('الرقم السري غلط');
+U=u;await load();cur=u.role=='admin'?'':u.cls;T='att';E=null;openAtt();r()}
+const out=()=>login();
+function openAtt(){const a=D.a[cur+'_'+dt];P={...(a&&a.p||{})}}
+const vis=()=>D.m.filter(m=>!cur||m.cls==cur);
+const sess=c=>Object.values(D.a).filter(x=>x.cls==c).sort((a,b)=>b.date.localeCompare(a.date));
+function streak(m){let n=0;for(const s of sess(m.cls)){if(s.p&&s.p[m.id])n++;else break}return n}
+function r(){const A=U.role=='admin';
+const tabs=[['att','الحضور'],['mem','المخدومين'],['rep','التقرير']].concat(A?[['les','الدروس'],['usr','الخدام']]:[]);
+let h=`<header><b>⛪ متابعة المخدومين</b><span>${esc(U.name)} ${A?'(أمين الخدمة)':'- '+U.cls}</span><button onclick="out()">خروج</button></header>${BR()}
+<nav>${tabs.map(t=>`<a class="${T==t[0]?'on':''}" onclick="T='${t[0]}';E=null;r()">${t[1]}</a>`).join('')}</nav><main>`;
+if(A&&T!='usr')h+=`<select onchange="cur=this.value;openAtt();r()"><option value="">كل المراحل</option>${opts(cur)}</select>`;
+$('app').innerHTML=h+V[T]()+'</main>'}
+const V={
+att(){if(!cur)return '<p>👆 اختار المرحلة من القائمة عشان تسجل الحضور</p>';
+const L=D.l[cur+'_'+dt]||{},ms=D.m.filter(m=>m.cls==cur);
+return `<input type=date value="${dt}" onchange="dt=this.value;openAtt();r()">
+<input id=lt placeholder="📖 اسم الدرس" value="${esc(L.title)}"><input id=lv placeholder="✝ الآية" value="${esc(L.verse)}">
+${ms.map(m=>`<div class="row ${P[m.id]?'ok':''}" onclick="tg('${m.id}',this)"><span>${esc(m.name)}</span><b>${P[m.id]?'حاضر ✓':'غائب'}</b></div>`).join('')||'<p>ضيف مخدومين الأول من تبويب المخدومين</p>'}
+<button class=pri onclick="sv()">💾 حفظ الحضور والدرس</button>`},
+mem(){return E?form():`<button class=pri onclick="E={};r()">+ إضافة مخدوم</button>
+<input placeholder="🔍 ابحث بأي خانة (اسم، عنوان، موبايل، أب اعتراف...)" value="${esc(q)}" oninput="q=this.value;$('lst').innerHTML=ml()"><div id=lst>${ml()}</div>`},
+rep(){const run=m=>{let b=0,c=0;sess(m.cls).filter(x=>x.date.startsWith(mo)).reverse().forEach(x=>{x.p&&x.p[m.id]?b=Math.max(b,++c):c=0});return b};
+const ms=vis().map(m=>({m,n:run(m),z:streak(m)}));
+const g=ms.filter(x=>x.n>=4).sort((a,b)=>b.n-a.n),ab=ms.filter(x=>x.z==0&&sess(x.m.cls).length);
+const it=(x,t)=>`<div class=card><b>${esc(x.m.name)}</b> <small>${x.m.cls}</small><br>${t}<br>📞 <a href="tel:${esc(x.m.phone)}">${esc(x.m.phone)}</a> | أب الاعتراف: ${esc(x.m.father||'-')}</div>`;
+return `<button onclick="print()">🖨 طباعة</button><input type=month value="${mo}" onchange="mo=this.value;r()"><h3>🌟 أكملوا 4 أسابيع حضور ورا بعض في الشهر ده (${g.length})</h3>
+${g.map(x=>it(x,`حضور ${x.n} أسابيع متتالية`)).join('')||'<p>لا يوجد</p>'}
+<h3>⚠ غابوا آخر اجتماع (${ab.length})</h3>${ab.map(x=>it(x,'محتاج افتقاد')).join('')||'<p>لا يوجد</p>'}`},
+les(){const x=Object.values(D.l).filter(x=>(!cur||x.cls==cur)&&(x.title||x.verse)).sort((a,b)=>b.date.localeCompare(a.date)||CL.indexOf(a.cls)-CL.indexOf(b.cls));
+return x.map(x=>`<div class=card><b>${x.cls}</b> <small>${x.date}</small><br>📖 ${esc(x.title)}<br>✝ ${esc(x.verse)}</div>`).join('')||'<p>لسه مفيش دروس مسجلة</p>'},
+usr(){return `<div class=card><b>اسم المطرانية والكاتدرائية</b><input id=b_a value="${esc(BRD.a)}"><input id=b_b value="${esc(BRD.b)}"><button class=pri onclick="sb()">💾 حفظ الاسم</button></div><div class=card><input id=u_n placeholder="اسم الخادم"><input id=u_p placeholder="الرقم السري" inputmode=numeric>
+<select id=u_c><option value="admin">أمين خدمة (كل المراحل)</option>${opts()}</select><button class=pri onclick="au()">+ إضافة</button></div>`+
+D.u.map(u=>`<div class=card>${esc(u.name)} — ${u.role=='admin'?'أمين الخدمة':u.cls}<br><small>الرقم السري: ${esc(u.pin)}</small> ${u.id==U.id?'':`<button class=del onclick="du('${u.id}')">حذف</button>`}</div>`).join('')}};
+function tg(id,el){P[id]=!P[id];el.classList.toggle('ok');el.lastChild.textContent=P[id]?'حاضر ✓':'غائب'}
+async function sv(){const k=cur+'_'+dt;await db.collection('att').doc(k).set({cls:cur,date:dt,p:P});
+await db.collection('lessons').doc(k).set({cls:cur,date:dt,title:$('lt').value,verse:$('lv').value});D.a[k]={cls:cur,date:dt,p:{...P}};D.l[k]={cls:cur,date:dt,title:$('lt').value,verse:$('lv').value};alert('تم الحفظ ✅');r()}
+function ml(){const s=q.trim();return vis().filter(m=>!s||Object.values(m).join(' ').includes(s)).map(m=>
+`<div class=card onclick="E=D.m.find(x=>x.id=='${m.id}');r()"><b>${esc(m.name)}</b> <small>${m.cls}</small><br>📞 ${esc(m.phone)} | 🏠 ${esc(m.addr)}<br>أب الاعتراف: ${esc(m.father||'-')} ${m.deacon=='نعم'?'| شماس':''} ${m.scout=='نعم'?'| كشافة':''}</div>`).join('')||'<p>لا نتائج</p>'}
+function form(){const A=U.role=='admin',c=E.cls||(A?cur:U.cls),f=(i,p,t='')=>`<input id=f_${i} ${t} placeholder="${p}" value="${esc(E[i])}">`,yn=k=>`<select id=f_${k}><option>لا</option><option ${E[k]=='نعم'?'selected':''}>نعم</option></select>`;
+return `<div class=card>${f('name','الاسم')}<select id=f_cls ${A?'':'disabled'}>${opts(c)}</select>${f('addr','العنوان')}${f('phone','رقم الموبايل','type=tel')}${f('father','أب الاعتراف')}
+شماس؟ ${yn('deacon')} كشافة؟ ${yn('scout')}<button class=pri onclick="svm()">حفظ</button>${E.id?'<button class=del onclick="dm()">حذف</button>':''}<button onclick="E=null;r()">إلغاء</button></div>`}
+async function svm(){const A=U.role=='admin',d={name:$('f_name').value.trim(),cls:A?$('f_cls').value:U.cls,addr:$('f_addr').value,phone:$('f_phone').value,father:$('f_father').value,deacon:$('f_deacon').value,scout:$('f_scout').value};
+if(!d.name)return alert('اكتب الاسم');await db.collection('members').doc(E.id||db.collection('members').doc().id).set(d);E=null;await load();r()}
+async function dm(){if(!confirm('تحذف المخدوم؟'))return;await db.collection('members').doc(E.id).delete();E=null;await load();r()}
+async function au(){const n=$('u_n').value.trim(),p=$('u_p').value.trim(),c=$('u_c').value;if(!n||!p)return alert('اكمل البيانات');
+await db.collection('users').add({name:n,pin:p,role:c=='admin'?'admin':'servant',cls:c=='admin'?'':c});await load();r()}
+async function sb(){BRD={a:$('b_a').value.trim(),b:$('b_b').value.trim()};await db.collection('settings').doc('brand').set(BRD);alert('تم الحفظ ✅');r()}
+async function du(id){if(!confirm('تحذف الخادم؟'))return;await db.collection('users').doc(id).delete();await load();r()}
+init();
+</script></body></html>
